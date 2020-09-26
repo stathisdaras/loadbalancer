@@ -19,14 +19,14 @@ The cluster of provider instance nodes is managed by the `ProviderClusterService
  
 ## Instantiating the load balancer app
 
-This is an example of on can instantiate the load balancing & nodes' cluster components
+This is an example of how one can instantiate the load balancing & nodes' cluster components
 
 ```
 
         // New load-balancer with random algorithm and simple heart-beat check
         LoadBalancer balancer = LoadBalancer.getInstance(new RandomImplementation(), new SimpleHeartBeatChecker());
 
-        // New cluster with 10 provide nodes
+        // New cluster with 10 provider nodes
         ProviderClusterService.getInstance(10);
 
 ```
