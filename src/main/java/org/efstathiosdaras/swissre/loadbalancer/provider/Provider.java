@@ -1,5 +1,7 @@
 package org.efstathiosdaras.swissre.loadbalancer.provider;
 
+import java.util.UUID;
+
 /**
  * Interface defining methods of Service Provider.
  *
@@ -13,4 +15,6 @@ public interface Provider {
      * @return identifier
      */
     String get();
+
+    UUID getID();
 }

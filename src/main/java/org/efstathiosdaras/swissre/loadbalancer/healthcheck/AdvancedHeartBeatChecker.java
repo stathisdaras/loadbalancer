@@ -3,6 +3,7 @@ package org.efstathiosdaras.swissre.loadbalancer.healthcheck;
 import org.efstathiosdaras.swissre.loadbalancer.enumeration.HealthStatus;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.efstathiosdaras.swissre.loadbalancer.enumeration.HealthStatus.ALIVE;
@@ -26,7 +27,7 @@ public class AdvancedHeartBeatChecker implements HeartBeatChecker {
     /**
      * Mapping between nodeIds that have been excluded & the number of their successful heart beats (admittances).
      */
-    protected final Map<String, Integer> admittancesPerExcludedNode = new ConcurrentHashMap<>();
+    protected final Map<UUID, Integer> admittancesPerExcludedNode = new ConcurrentHashMap<>();
 
     /**
      * Invokes simple health checker.
@@ -36,7 +37,7 @@ public class AdvancedHeartBeatChecker implements HeartBeatChecker {
      * @param nodeId unique node identifier
      * @return health status
      */
-    public HealthStatus check(String nodeId) {
+    public HealthStatus check(UUID nodeId) {
         HealthStatus status = heartBeatChecker.check(nodeId);
 
         if (DEAD.equals(status)) {
@@ -50,7 +51,7 @@ public class AdvancedHeartBeatChecker implements HeartBeatChecker {
         return DEAD;
     }
 
-    private HealthStatus checkConsecutiveAdmittances(String nodeId) {
+    private HealthStatus checkConsecutiveAdmittances(UUID nodeId) {
         Integer admittances = admittancesPerExcludedNode.get(nodeId);
 
         if (admittances >= CONSECUTIVE_ADMITTANCES_THRESHOLD) {
@@ -62,7 +63,7 @@ public class AdvancedHeartBeatChecker implements HeartBeatChecker {
         return DEAD;
     }
 
-    public Map<String, Integer> getAdmittancesPerExcludedNode() {
+    public Map<UUID, Integer> getAdmittancesPerExcludedNode() {
         return admittancesPerExcludedNode;
     }
 }

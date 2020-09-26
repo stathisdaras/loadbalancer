@@ -25,7 +25,7 @@ public class SimpleHeartBeatCheckerTest {
     public void nodeDown_willBeMarkedExcluded() {
 
         // Given
-        String deadNodeId = UUID.randomUUID().toString();
+        UUID deadNodeId = UUID.randomUUID();
         SimpleHeartBeatChecker checker = new SimpleHeartBeatChecker();
         clusterService.getNodesMap().put(deadNodeId, createDeadNode());
 
@@ -42,7 +42,7 @@ public class SimpleHeartBeatCheckerTest {
         // Given
         SimpleHeartBeatChecker checker = new SimpleHeartBeatChecker();
 
-        String aliveNodeId = UUID.randomUUID().toString();
+        UUID aliveNodeId = UUID.randomUUID();
         clusterService.getNodesMap().put(aliveNodeId, new ProviderStateDTO(new ProviderImpl()));
 
         // When

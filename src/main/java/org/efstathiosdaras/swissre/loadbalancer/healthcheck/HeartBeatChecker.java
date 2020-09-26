@@ -2,6 +2,8 @@ package org.efstathiosdaras.swissre.loadbalancer.healthcheck;
 
 import org.efstathiosdaras.swissre.loadbalancer.enumeration.HealthStatus;
 
+import java.util.UUID;
+
 /**
  * Interface defining the behavior of node health checking components.
  *
@@ -15,5 +17,5 @@ public interface HeartBeatChecker {
      * @param nodeId unique node identifier
      * @return health status enum {@link HealthStatus}
      */
-    HealthStatus check(String nodeId);
+    HealthStatus check(UUID nodeId);
 }

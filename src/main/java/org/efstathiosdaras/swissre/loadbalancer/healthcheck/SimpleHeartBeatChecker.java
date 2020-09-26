@@ -5,6 +5,7 @@ import org.efstathiosdaras.swissre.loadbalancer.provider.ProviderClusterService;
 import org.efstathiosdaras.swissre.loadbalancer.provider.ProviderStateDTO;
 
 import java.util.Map;
+import java.util.UUID;
 
 import static org.efstathiosdaras.swissre.loadbalancer.enumeration.HealthStatus.DEAD;
 
@@ -23,8 +24,8 @@ public class SimpleHeartBeatChecker implements HeartBeatChecker {
      * @param nodeId unique node identifier
      * @return health status
      */
-    public HealthStatus check(String nodeId) {
-        Map<String, ProviderStateDTO> providersMap = nodesService.getNodesMap();
+    public HealthStatus check(UUID nodeId) {
+        Map<UUID, ProviderStateDTO> providersMap = nodesService.getNodesMap();
         ProviderStateDTO nodeState = providersMap.get(nodeId);
         HealthStatus status = nodeState.getHealthStatus();
 

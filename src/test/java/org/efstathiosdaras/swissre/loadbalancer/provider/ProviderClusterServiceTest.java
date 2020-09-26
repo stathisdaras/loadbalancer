@@ -2,13 +2,12 @@ package org.efstathiosdaras.swissre.loadbalancer.provider;
 
 import org.junit.Test;
 
-import java.util.Optional;
+import java.util.UUID;
 
 import static org.efstathiosdaras.swissre.loadbalancer.enumeration.AdmittanceStatus.EXCLUDED;
 import static org.efstathiosdaras.swissre.loadbalancer.enumeration.AdmittanceStatus.INCLUDED;
 import static org.efstathiosdaras.swissre.loadbalancer.provider.ProviderClusterService.MAX_CLUSTER_SIZE;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 /**
  * Unit test cases for {@link ProviderClusterService} class.
@@ -35,42 +34,33 @@ public class ProviderClusterServiceTest {
     public void nodeIncluded_statusUpdated() {
         // Given
         ProviderClusterService clusterService = ProviderClusterService.getInstance();
+        ProviderImpl node = new ProviderImpl();
+        clusterService.registerNode(node);
+        UUID nodeId = node.getID();
 
         // When
-        Optional<String> nodeIdOptional = clusterService.getNodesMap().keySet().stream().findAny();
+        clusterService.excludeNode(nodeId);
 
-        if (nodeIdOptional.isPresent()) {
-            String nodeId = nodeIdOptional.get();
-            clusterService.excludeNode(nodeId);
-
-            // Then
-            ProviderStateDTO nodeState = clusterService.getNodesMap().get(nodeId);
-            assertEquals(EXCLUDED, nodeState.getAdmittanceStatus());
-        } else {
-            fail("Node cluster is empty.");
-        }
+        // Then
+        ProviderStateDTO nodeState = clusterService.getNodesMap().get(nodeId);
+        assertEquals(EXCLUDED, nodeState.getAdmittanceStatus());
     }
 
     @Test
     public void nodeExcluded_statusUpdated() {
         // Given
         ProviderClusterService clusterService = ProviderClusterService.getInstance();
+        ProviderImpl node = new ProviderImpl();
+        clusterService.registerNode(node);
+        UUID nodeId = node.getID();
 
         // When
-// When
-        Optional<String> nodeIdOptional = clusterService.getNodesMap().keySet().stream().findAny();
+        clusterService.includeNode(nodeId);
 
-        if (nodeIdOptional.isPresent()) {
-            String nodeId = nodeIdOptional.get();
-            clusterService.includeNode(nodeId);
+        // Then
+        ProviderStateDTO nodeState = clusterService.getNodesMap().get(nodeId);
+        assertEquals(INCLUDED, nodeState.getAdmittanceStatus());
 
-            // Then
-            ProviderStateDTO nodeState = clusterService.getNodesMap().get(nodeId);
-            assertEquals(INCLUDED, nodeState.getAdmittanceStatus());
-
-        } else {
-            fail("Node cluster is empty.");
-        }
     }
 
 }

@@ -26,14 +26,14 @@ public class AdvancedHeartBeatCheckerTest {
         // Given
         AdvancedHeartBeatChecker checker = new AdvancedHeartBeatChecker();
 
-        String deadNodeId = UUID.randomUUID().toString();
+        UUID deadNodeId = UUID.randomUUID();
         clusterService.getNodesMap().put(deadNodeId, createDeadNode());
 
         // When
         checker.check(deadNodeId);
 
         // Then
-        Map<String, Integer> perExcludedNode = checker.getAdmittancesPerExcludedNode();
+        Map<UUID, Integer> perExcludedNode = checker.getAdmittancesPerExcludedNode();
         Integer admittances = perExcludedNode.get(deadNodeId);
         assertEquals(0, admittances.intValue());
     }

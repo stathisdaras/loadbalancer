@@ -4,6 +4,7 @@ import org.efstathiosdaras.swissre.loadbalancer.enumeration.AdmittanceStatus;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -20,7 +21,7 @@ public class ProviderClusterService {
     protected static final int MAX_CLUSTER_SIZE = 10;
 
     private static ProviderClusterService instance;
-    protected final Map<String, ProviderStateDTO> nodesMap = new ConcurrentHashMap<>();
+    protected final Map<UUID, ProviderStateDTO> nodesMap = new ConcurrentHashMap<>();
 
     private ProviderClusterService(int clusterSize) {
         for (int i = 0; i < clusterSize - 1; i++) {
@@ -47,21 +48,21 @@ public class ProviderClusterService {
      */
     public void registerNode(ProviderImpl provider) {
         if (nodesMap.size() < MAX_CLUSTER_SIZE) {
-            nodesMap.put(String.valueOf(provider.hashCode()), new ProviderStateDTO(provider));
+            nodesMap.put(provider.getID(), new ProviderStateDTO(provider));
         }
     }
 
     /**
      * Updates selected node's admittance status to EXCLUDED.
      */
-    public void excludeNode(String nodeId) {
+    public void excludeNode(UUID nodeId) {
         nodesMap.get(nodeId).setAdmittanceStatus(EXCLUDED);
     }
 
     /**
      * Updates selected node's admittance status to INCLUDED.
      */
-    public void includeNode(String nodeId) {
+    public void includeNode(UUID nodeId) {
         nodesMap.get(nodeId).setAdmittanceStatus(INCLUDED);
     }
 
@@ -78,7 +79,7 @@ public class ProviderClusterService {
                 .collect(Collectors.toList());
     }
 
-    public Map<String, ProviderStateDTO> getNodesMap() {
+    public Map<UUID, ProviderStateDTO> getNodesMap() {
         return nodesMap;
     }
 

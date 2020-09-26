@@ -15,7 +15,7 @@ The main class `LoadBalancer.java` is also responsible for checking the health o
 The cluster of provider instance nodes is managed by the `ProviderClusterService.java` component. This is responsible for managing nodes inside the cluster in an efficient & thread-safe way. The main `LoadBalancer.java` component will make all its requests to the cluster through this service which acts like a proxy. This is also a sinlgleton component.
  
  ## Rate limiter
- //todo...
+A simple rate limiting functionality has been implemented inside the `LoadBalancer.java`. The parallel requests are stored inside a requests per node mapping (concurrent hashmap). Every time a request is received & the node is selected among the available nodes, then a check is made if the node is constipated (meaning max capacity has been reached). If it is, then the load balancer is invoked recursuvely. If all available nodes of the cluster are constipated, this is considered an illegal state & an exception is thrwon.
  
 ## Instantiating the load balancer app
 
