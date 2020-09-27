@@ -5,7 +5,11 @@ import org.efstathiosdaras.swissre.loadbalancer.healthcheck.HeartBeatChecker;
 import org.efstathiosdaras.swissre.loadbalancer.provider.Provider;
 import org.efstathiosdaras.swissre.loadbalancer.provider.ProviderClusterService;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -29,7 +33,7 @@ public class LoadBalancer {
     private final HeartBeatChecker heartBeatChecker;
 
     private static final int MAX_REQUESTS_PER_NODE = 10;
-    private ConcurrentHashMap<UUID, Integer> parallelRequestsPerNode = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<UUID, List<Instant>> parallelRequestsPerNode = new ConcurrentHashMap<>();
 
     // for monitoring / test purposes
     private AtomicInteger errors = new AtomicInteger();
@@ -57,18 +61,11 @@ public class LoadBalancer {
         // Retrieve node
         Provider selectedNode = selectNode();
         UUID nodeId = selectedNode.getID();
-        Integer issuedRequests = parallelRequestsPerNode.get(nodeId);
+        List<Instant> requestInstants = parallelRequestsPerNode.get(nodeId);
 
         // if node has free capacity
-        // add request to parallel requests
-        // process request & remove from parallel requests
-        if (issuedRequests == null || issuedRequests < MAX_REQUESTS_PER_NODE) {
-
-            incrementNodeRequests(nodeId);
-            String identifier = selectedNode.get(); // this process could be long-running
-            decrementNodeRequests(nodeId);
-
-            return identifier;
+        if (requestInstants == null || requestInstants.size() < MAX_REQUESTS_PER_NODE) {
+            return handleNodeRequest(selectedNode, nodeId);
             // total capacity limit is reached (all available nodes have reached their capacity)
             // then communicate error
         } else if (allNodesBusy()) {
@@ -80,27 +77,65 @@ public class LoadBalancer {
         }
     }
 
+    /**
+     * Add request to parallel requests
+     * process request &
+     * finally remove from parallel requests
+     * & remove all expired requests
+     */
+    private String handleNodeRequest(Provider selectedNode, UUID nodeId) {
+        Instant now = Instant.now();
+        String result;
+
+        addToNodeRequests(nodeId, now);
+        try {
+            result = selectedNode.get(); // this process could be long-running
+        } finally {
+            subtractFromNodeRequests(nodeId, now);
+            removeExpiredRequests();
+        }
+
+        return result;
+    }
+
+    /**
+     * For every node, detects the requests that have expired & cleans them
+     * By expired, meaning requests that lived in the hashmap more than REQUEST_TTL_MIN
+     */
+    protected void removeExpiredRequests() {
+        parallelRequestsPerNode.forEach((nodeId, instants) -> {
+            for (int i = 0; i < instants.size(); i++) {
+                Instant instant = instants.get(i);
+                Instant lastHour = Instant.now().minus(1, ChronoUnit.HOURS);
+                if (instant.isBefore(lastHour)) {
+                    instants.remove(instant);
+                }
+
+            }
+        });
+    }
+
     private boolean allNodesBusy() {
         return parallelRequestsPerNode.entrySet().stream()
-                .noneMatch(e -> e.getValue() < MAX_REQUESTS_PER_NODE);
+                .noneMatch(e -> e.getValue().size() < MAX_REQUESTS_PER_NODE);
     }
 
-    private void decrementNodeRequests(UUID nodeId) {
-        Integer issuedRequests = parallelRequestsPerNode.get(nodeId);
-        if (issuedRequests == 1) {
-            parallelRequestsPerNode.remove(nodeId);
-        } else {
-            parallelRequestsPerNode.put(nodeId, --issuedRequests);
+    private void subtractFromNodeRequests(UUID nodeId, Instant instant) {
+        List<Instant> requestInstants = parallelRequestsPerNode.get(nodeId);
+        if (requestInstants != null) {
+            requestInstants.remove(instant);
+            parallelRequestsPerNode.put(nodeId, requestInstants);
         }
     }
 
-    private void incrementNodeRequests(UUID nodeId) {
-        Integer issuedRequests = parallelRequestsPerNode.get(nodeId);
-        if (issuedRequests == null) {
-            parallelRequestsPerNode.put(nodeId, 1);
-        } else {
-            parallelRequestsPerNode.put(nodeId, ++issuedRequests);
+    private void addToNodeRequests(UUID nodeId, Instant instant) {
+        List<Instant> requestInstants = parallelRequestsPerNode.get(nodeId);
+        if (requestInstants == null) {
+            requestInstants = new ArrayList<>();
         }
+
+        requestInstants.add(instant);
+        parallelRequestsPerNode.put(nodeId, requestInstants);
     }
 
     /**
@@ -133,5 +168,9 @@ public class LoadBalancer {
      */
     public AtomicInteger getErrors() {
         return errors;
+    }
+
+    public Map<UUID, List<Instant>> getParallelRequestsPerNode() {
+        return parallelRequestsPerNode;
     }
 }

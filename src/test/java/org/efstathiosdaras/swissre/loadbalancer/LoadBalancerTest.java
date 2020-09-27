@@ -6,7 +6,11 @@ import org.efstathiosdaras.swissre.loadbalancer.healthcheck.SimpleHeartBeatCheck
 import org.efstathiosdaras.swissre.loadbalancer.provider.ProviderClusterService;
 import org.junit.Test;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -68,5 +72,25 @@ public class LoadBalancerTest {
         }
 
         assertNotEquals(0, balancer.getErrors().get());
+    }
+
+    @Test
+    public void expiredRequests_willBeRemoved() {
+        // Given
+        UUID nodeId = UUID.randomUUID();
+        LoadBalancer balancer = LoadBalancer.getInstance(new RoundRobinImplementation(), new SimpleHeartBeatChecker());
+        Instant anHourBefore = Instant.now().minus(1, ChronoUnit.HOURS);
+
+        List<Instant> requestInstants = new ArrayList<>();
+        requestInstants.add(Instant.now());
+        requestInstants.add(anHourBefore);
+        balancer.getParallelRequestsPerNode().put(nodeId, requestInstants);
+
+        // When
+        balancer.removeExpiredRequests();
+
+        // Then
+        List<Instant> instants = balancer.getParallelRequestsPerNode().get(nodeId);
+        assertFalse(instants.contains(anHourBefore));
     }
 }
